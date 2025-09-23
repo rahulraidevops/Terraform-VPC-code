@@ -1,0 +1,56 @@
+name: 'Terraform'
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  terraform:
+    name: Terraform
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+    # 1. Checkout code
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    # 2. Setup Terraform CLI
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: 1.6.0  # or whatever version you're using
+
+    # 3. Configure AWS Credentials
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1  # change to your region
+
+    # 4. Terraform Init
+    - name: Terraform Init
+      id: init
+      run: terraform init
+
+    # 5. Terraform Validate
+    - name: Terraform Validate
+      run: terraform validate
+
+    # 6. Terraform Plan
+    - name: Terraform Plan
+      id: plan
+      run: terraform plan -no-color
+      continue-on-error: true
+
+    # 7. Check if PR or Push to main
+    - name: Check for changes (apply only on main branch push)
+      if: github.ref == 'refs/heads/main' && steps.plan.outcome == 'success'
+      run: |
+        echo "Plan succeeded and we're on main branch. Applying..."
+        terraform apply -auto-approve
