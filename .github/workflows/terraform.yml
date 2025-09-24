@@ -54,3 +54,5 @@ jobs:
       run: |
         echo "Plan succeeded and we're on main branch. Applying..."
         terraform apply -auto-approve
+      env: 
+        GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
